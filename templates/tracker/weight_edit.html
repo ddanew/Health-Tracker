@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Редактировать запись веса</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.weight.id_for_label }}" class="form-label">Вес (кг)</label>
+                        <input type="number" step="0.1" class="form-control" id="{{ form.weight.id_for_label }}" name="{{ form.weight.name }}" value="{{ form.weight.value }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">Дата измерения</label>
+                        <input type="date" class="form-control" id="{{ form.date.id_for_label }}" name="{{ form.date.name }}" value="{{ form.date.value|date:'Y-m-d' }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Проверить изменения</button>
+                    <a href="{% url 'weight-list' %}" class="btn btn-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

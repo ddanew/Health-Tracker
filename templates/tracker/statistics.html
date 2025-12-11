@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mt-4 mb-4">Статистика здоровья</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    График изменения веса
+                </div>
+                <div class="card-body">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    График индекса массы тела (BMI)
+                </div>
+                <div class="card-body">
+                    <canvas id="bmiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white" id="currentDataHeader">
+            Текущие показатели
+        </div>
+        <div class="card-body" id="currentDataBody">
+            {% if latest_entry %}
+                <p id="dateDisplay">Последний замер: {{ latest_entry.date }}</p>
+                <p id="weightDisplay">Вес: {{ latest_entry.weight }} кг</p>
+                <p id="bmiDisplay">Индекс массы тела (BMI): {{ latest_bmi }} ({{ bmi_category }})</p>
+                {% if normal_weight_min and normal_weight_max %}
+                    {% if latest_bmi < 18.5 %}
+                        <p id="normalWeightDisplay">Расчетный нормальный вес: {{ normal_weight_min }} - {{ normal_weight_max }} кг</p>
+                    {% elif latest_bmi >= 25 %}
+                        <p id="normalWeightDisplay">Расчетный нормальный вес: {{ normal_weight_min }} - {{ normal_weight_max }} кг</p>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <p>Нет данных для отображения</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{{ dates|json_script:"dates-data" }}
+{{ weight_data|json_script:"weight-data" }}
+{{ bmi_data|json_script:"bmi-data" }}
+{{ request.user.profile.height|default:0|json_script:"user-height-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Получаем данные из Django контекста
+    const dates = JSON.parse(document.getElementById('dates-data').textContent);
+    const weightData = JSON.parse(document.getElementById('weight-data').textContent);
+    const bmiData = JSON.parse(document.getElementById('bmi-data').textContent);
+
+    // Создаем график веса
+    const weightChart = new Chart(document.getElementById('weightChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Вес (кг)',
+                data: weightData,
+                borderColor: '#007bff',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return 'Дата: ' + context[0].label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Создаем график BMI
+    const bmiChart = new Chart(document.getElementById('bmiChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Индекс массы тела (BMI)',
+                data: bmiData,
+                borderColor: '#28a745',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return 'Дата: ' + context[0].label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Функция для обновления отображаемых данных
+    function updateCurrentData(index) {
+        if (index >= 0 && index < dates.length) {
+            document.getElementById('currentDataHeader').textContent = 'Данные за ' + dates[index];
+            document.getElementById('dateDisplay').textContent = 'Дата: ' + dates[index];
+            document.getElementById('weightDisplay').textContent = 'Вес: ' + weightData[index] + ' кг';
+            document.getElementById('bmiDisplay').textContent = 'Индекс массы тела (BMI): ' + bmiData[index] + ' (' + getBMICategory(bmiData[index]) + ')';
+            
+            // Удаляем предыдущий элемент с расчетным весом, если он существует
+            const existingNormalWeightDisplay = document.getElementById('normalWeightDisplay');
+            if (existingNormalWeightDisplay) {
+                existingNormalWeightDisplay.remove();
+            }
+            
+            // Добавляем расчетный нормальный вес в зависимости от BMI
+            const bmiValue = bmiData[index];
+            const height = JSON.parse(document.getElementById('user-height-data').textContent) / 100; // Получаем рост пользователя из JSON данных
+            
+            if (height > 0) {
+                const normalWeightMin = (18.5 * (height ** 2)).toFixed(1);
+                const normalWeightMax = (24.9 * (height ** 2)).toFixed(1);
+                
+                if (bmiValue < 18.5 || bmiValue >= 25) {
+                    const normalWeightElement = document.createElement('p');
+                    normalWeightElement.id = 'normalWeightDisplay';
+                    normalWeightElement.textContent = 'Расчетный нормальный вес: ' + normalWeightMin + ' - ' + normalWeightMax + ' кг';
+                    document.getElementById('currentDataBody').appendChild(normalWeightElement);
+                }
+            }
+        }
+    }
+
+    // Функция для определения категории BMI
+    function getBMICategory(bmi) {
+        if (bmi < 18.5) return 'Недостаточная масса';
+        if (bmi >= 18.5 && bmi < 25) return 'Норма';
+        if (bmi >= 25 && bmi < 30) return 'Избыточный вес';
+        return 'Ожирение';
+    }
+
+    // Обработчик кликов по графику веса
+    weightChart.canvas.addEventListener('click', function(event) {
+        const points = weightChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (points.length) {
+            const firstPoint = points[0];
+            updateCurrentData(firstPoint.index);
+        }
+    });
+
+    // Обработчик кликов по графику BMI
+    bmiChart.canvas.addEventListener('click', function(event) {
+        const points = bmiChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (points.length) {
+            const firstPoint = points[0];
+            updateCurrentData(firstPoint.index);
+        }
+    });
+
+    // Сброс к последним данным при клике вне точек
+    weightChart.canvas.addEventListener('click', function(event) {
+        const points = weightChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (!points.length) {
+            // Возвращаем к последним данным
+            if (dates.length > 0) {
+                const lastIndex = dates.length - 1;
+                document.getElementById('currentDataHeader').textContent = 'Текущие показатели';
+                document.getElementById('dateDisplay').textContent = 'Последний замер: ' + dates[lastIndex];
+                document.getElementById('weightDisplay').textContent = 'Вес: ' + weightData[lastIndex] + ' кг';
+                document.getElementById('bmiDisplay').textContent = 'Индекс массы тела (BMI): ' + bmiData[lastIndex] + ' (' + getBMICategory(bmiData[lastIndex]) + ')';
+                
+                // Удаляем предыдущий элемент с расчетным весом, если он существует
+                const existingNormalWeightDisplay = document.getElementById('normalWeightDisplay');
+                if (existingNormalWeightDisplay) {
+                    existingNormalWeightDisplay.remove();
+                }
+                
+                // Добавляем расчетный нормальный вес в зависимости от BMI последней записи, если BMI не в норме
+                const bmiValue = bmiData[lastIndex];
+                const height = JSON.parse(document.getElementById('user-height-data').textContent) / 100; // Получаем рост пользователя из JSON данных
+                
+                if (height > 0 && (bmiValue < 18.5 || bmiValue >= 25)) {
+                    const normalWeightMin = (18.5 * (height ** 2)).toFixed(1);
+                    const normalWeightMax = (24.9 * (height ** 2)).toFixed(1);
+                    
+                    const normalWeightElement = document.createElement('p');
+                    normalWeightElement.id = 'normalWeightDisplay';
+                    normalWeightElement.textContent = 'Расчетный нормальный вес: ' + normalWeightMin + ' - ' + normalWeightMax + ' кг';
+                    document.getElementById('currentDataBody').appendChild(normalWeightElement);
+                }
+            }
+        }
+    });
+
+    bmiChart.canvas.addEventListener('click', function(event) {
+        const points = bmiChart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (!points.length) {
+            // Возвращаем к последним данным
+            if (dates.length > 0) {
+                const lastIndex = dates.length - 1;
+                document.getElementById('currentDataHeader').textContent = 'Текущие показатели';
+                document.getElementById('dateDisplay').textContent = 'Последний замер: ' + dates[lastIndex];
+                document.getElementById('weightDisplay').textContent = 'Вес: ' + weightData[lastIndex] + ' кг';
+                document.getElementById('bmiDisplay').textContent = 'Индекс массы тела (BMI): ' + bmiData[lastIndex] + ' (' + getBMICategory(bmiData[lastIndex]) + ')';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

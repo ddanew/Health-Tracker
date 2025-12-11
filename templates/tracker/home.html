@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1>
+            {% if user.is_authenticated %}
+                Привет, {{ user.username }}!
+            {% else %}
+                Привет, Гость!
+            {% endif %}
+        </h1>
+        <p class="lead">Добро пожаловать в Health Tracker!</p>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title">Функционал приложения:</h3>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">📊 Отслеживание веса с графиком прогресса</li>
+                <li class="list-group-item">📈 Анализ динамики изменений веса</li>
+                <li class="list-group-item">🧮 Автоматический расчет ИМТ (индекса массы тела)</li>
+                <li class="list-group-item">🔔 Персональные рекомендации на основе ваших данных</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6 offset-md-3 text-center">
+            {% if not user.is_authenticated %}
+                <p class="mb-3">Для доступа ко всем функциям приложения:</p>
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg mr-3">Войти</a>
+                <a href="{% url 'register' %}" class="btn btn-success btn-lg">Зарегистрироваться</a>
+            {% else %}
+                <a href="{% url 'weight-list' %}" class="btn btn-info btn-lg">Перейти к моим записям</a>
+                <a href="{% url 'statistics' %}" class="btn btn-secondary btn-lg ml-3">Статистика</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
