@@ -53,4 +53,25 @@ class ProfileUpdateView(UpdateView):
     success_url = reverse_lazy('profile')
 
     def get_object(self):
-        return self.request.user.profile
+        # Создаем профиль, если его нет
+        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
+        return profile
+
+    def post(self, request, *args, **kwargs):
+        # Обработка изменения имени пользователя
+        first_name = request.POST.get('first_name', '')
+        if first_name:
+            request.user.first_name = first_name
+            request.user.save()
+        
+        # Вызов родительского метода для обработки остальных полей
+        return super().post(request, *args, **kwargs)
+
+@login_required
+def update_user_info(request):
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '')
+        request.user.first_name = first_name
+        request.user.save()
+        return redirect('profile')
+    return redirect('profile')

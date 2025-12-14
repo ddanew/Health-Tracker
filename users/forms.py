@@ -35,16 +35,15 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'password1', 'password2', 
-                  'first_name', 'last_name', 'date_of_birth', 
+        fields = ('username', 'email', 'password1', 'password2',
+                  'first_name', 'last_name', 'date_of_birth',
                   'height', 'gender')
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
-        user.last_name = self.cleaned_data['last_name']
-        
+        # Убираем фамилию из регистрации, оставляем только имя
         if commit:
             user.save()
             profile = UserProfile.objects.create(
