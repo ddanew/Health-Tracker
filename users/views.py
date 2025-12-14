@@ -46,6 +46,8 @@ def logout_view(request):
     redirect_url = getattr(settings, 'LOGOUT_REDIRECT_URL', 'home')
     return redirect(redirect_url)
 
+from django.core.exceptions import ObjectDoesNotExist
+
 class ProfileUpdateView(UpdateView):
     model = UserProfile
     fields = ['date_of_birth', 'height', 'gender']
@@ -53,9 +55,13 @@ class ProfileUpdateView(UpdateView):
     success_url = reverse_lazy('profile')
 
     def get_object(self, queryset=None):
-        # Создаем профиль, если его нет
-        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
-        return profile
+        try:
+            # Попробуем получить существующий профиль
+            return self.request.user.profile
+        except AttributeError:
+            # Если у пользователя нет профиля, создадим его
+            profile = UserProfile.objects.create(user=self.request.user)
+            return profile
 
     def post(self, request, *args, **kwargs):
         # Обработка изменения имени пользователя
