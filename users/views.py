@@ -55,13 +55,9 @@ class ProfileUpdateView(UpdateView):
     success_url = reverse_lazy('profile')
 
     def get_object(self, queryset=None):
-        try:
-            # Попробуем получить существующий профиль
-            return self.request.user.profile
-        except AttributeError:
-            # Если у пользователя нет профиля, создадим его
-            profile = UserProfile.objects.create(user=self.request.user)
-            return profile
+        # Используем get_or_create для надежного получения/создания профиля
+        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
+        return profile
 
     def post(self, request, *args, **kwargs):
         # Обработка изменения имени пользователя
