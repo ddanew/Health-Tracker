@@ -52,7 +52,7 @@ class ProfileUpdateView(UpdateView):
     template_name = 'users/profile_edit.html'
     success_url = reverse_lazy('profile')
 
-    def get_object(self):
+    def get_object(self, queryset=None):
         # Создаем профиль, если его нет
         profile, created = UserProfile.objects.get_or_create(user=self.request.user)
         return profile
