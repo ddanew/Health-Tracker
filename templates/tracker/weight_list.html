@@ -5,7 +5,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h3>Мои записи веса</h3>
+                <h3>Мои записи здоровья</h3>
             </div>
             <div class="card-body">
                 {% if entries %}
@@ -14,6 +14,8 @@
                             <tr>
                                 <th>Дата</th>
                                 <th>Вес (кг)</th>
+                                <th>Давление</th>
+                                <th>Пульс</th>
                                 <th>BMI</th>
                                 <th>Действия</th>
                             </tr>
@@ -22,7 +24,27 @@
                             {% for entry in entries %}
                             <tr>
                                 <td>{{ entry.date|date:"d.m.Y" }}</td>
-                                <td>{{ entry.weight }}</td>
+                                <td>
+                                    {% if entry.weight %}
+                                        {{ entry.weight }}
+                                    {% else %}
+                                        Н/Д
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if entry.systolic_pressure and entry.diastolic_pressure %}
+                                        {{ entry.systolic_pressure }}/{{ entry.diastolic_pressure }}
+                                    {% else %}
+                                        Н/Д
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if entry.pulse %}
+                                        {{ entry.pulse }}
+                                    {% else %}
+                                        Н/Д
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if entry.calculate_bmi %}
                                         {{ entry.calculate_bmi }}
@@ -42,7 +64,7 @@
                     <p>У вас пока нет записей о весе.</p>
                 {% endif %}
                 
-                <a href="{% url 'add-weight' %}" class="btn btn-success">Добавить запись веса</a>
+                <a href="{% url 'add-weight' %}" class="btn btn-success">Добавить запись здоровья</a>
             </div>
         </div>
     </div>

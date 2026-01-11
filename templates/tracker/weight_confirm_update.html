@@ -8,10 +8,37 @@
                 <h3>Подтверждение обновления записи</h3>
             </div>
             <div class="card-body">
-                <p>У вас уже есть запись веса за {{ object.date }}:</p>
-                <p class="text-center"><strong>{{ object.weight }} кг</strong></p>
-                <p>Вы хотите обновить её на новое значение:</p>
-                <p class="text-center"><strong>{{ new_weight }} кг</strong></p>
+                <p>У вас уже есть запись за {{ object.date }}:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Текущие значения:</h5>
+                        <p><strong>Вес:</strong> {% if object.weight is not None %}{{ object.weight }} кг{% else %}Не указан{% endif %}</p>
+                        {% if object.systolic_pressure is not None and object.diastolic_pressure is not None %}
+                            <p><strong>Давление:</strong> {{ object.systolic_pressure }}/{{ object.diastolic_pressure }} мм рт. ст.</p>
+                        {% else %}
+                            <p><strong>Давление:</strong> Не указано</p>
+                        {% endif %}
+                        {% if object.pulse is not None %}
+                            <p><strong>Пульс:</strong> {{ object.pulse }} уд/мин</p>
+                        {% else %}
+                            <p><strong>Пульс:</strong> Не указан</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Новые значения:</h5>
+                        <p><strong>Вес:</strong> {% if new_weight is not None %}{{ new_weight }} кг{% else %}Не указан{% endif %}</p>
+                        {% if new_systolic is not None and new_diastolic is not None %}
+                            <p><strong>Давление:</strong> {{ new_systolic }}/{{ new_diastolic }} мм рт. ст.</p>
+                        {% else %}
+                            <p><strong>Давление:</strong> Не указано</p>
+                        {% endif %}
+                        {% if new_pulse is not None %}
+                            <p><strong>Пульс:</strong> {{ new_pulse }} уд/мин</p>
+                        {% else %}
+                            <p><strong>Пульс:</strong> Не указан</p>
+                        {% endif %}
+                    </div>
+                </div>
                 
                 <form method="post">
                     {% csrf_token %}
